@@ -12,7 +12,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: linear-gradient(to bottom, #0b486b, #0b3866);
+      background: linear-gradient(to bottom, #012337, #02203d);
       overflow: hidden;
       font-family: Arial, sans-serif;
       position: relative;
@@ -48,21 +48,21 @@
     }
     
     .balloon {
-  position: absolute;
-  width: 150px;
-  height: 150px; /* Make height equal to width for perfect circle */
-  background: radial-gradient(circle at 30% 30%, rgba(0,150,255,0.8), rgba(0,100,200,0.9));
-  border-radius: 50%; /* Simple 50% for perfect circle */
-  box-shadow: 
-    inset -10px -10px 30px rgba(255,255,255,0.3),
-    inset 10px 10px 30px rgba(0,0,0,0.2),
-    0 0 20px rgba(0,200,255,0.5);
-  transform-origin: center center; /* Center the transform origin */
-  animation: float 3s ease-in-out infinite;
-  z-index: 2;
-  border: 2px solid rgba(255,255,255,0.3);
-  overflow: hidden;
-}
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle at 30% 30%, rgba(40, 71, 94, 0.8), rgba(22, 71, 120, 0.9));
+      border-radius: 50%;
+      box-shadow: 
+        inset -10px -10px 30px rgba(255,255,255,0.3),
+        inset 10px 10px 30px rgba(0,0,0,0.2),
+        0 0 20px rgba(0,200,255,0.5);
+      transform-origin: center center;
+      animation: float 3s ease-in-out infinite;
+      z-index: 2;
+      border: 2px solid rgba(255,255,255,0.3);
+      overflow: hidden;
+    }
     
     /* Water reflection effect */
     .balloon::before {
@@ -107,8 +107,8 @@
       box-shadow: 0 0 10px rgba(255,255,255,0.8);
       animation: rise 4s linear forwards;
       z-index: 3;
-      will-change: transform, opacity;  /* Helps browser optimize animations */
-      contain: content;  /* Limits repaint area */
+      will-change: transform, opacity;
+      contain: content;
     }
     
     .control-panel {
@@ -239,7 +239,7 @@
       border-radius: 10px;
       transition: width 0.3s;
       box-shadow: 0 0 5px rgba(255,255,255,0.3);
-      will-change: width;  /* Optimizes bar graph animations */
+      will-change: width;
     }
     
     .delta-bar { background: #3498db; }
@@ -356,9 +356,7 @@
     <div class="status" id="statusText">Not connected</div>
   </div>
 
-  <!-- The rest of your JavaScript remains exactly the same -->
   <script>
-   
     // DOM elements
     const balloon = document.querySelector('.balloon');
     const container = document.querySelector('.container');
@@ -403,8 +401,8 @@
     let data_index = 0, sum = 0;
 
     // Bubble cooldown system
-let lastBubbleTime = 0;
-const BUBBLE_COOLDOWN = 300; // ms between bubble bursts
+    let lastBubbleTime = 0;
+    const BUBBLE_COOLDOWN = 300; // ms between bubble bursts
     
     // Notch filter for 50Hz noise
     class Notch {
@@ -492,55 +490,53 @@ const BUBBLE_COOLDOWN = 300; // ms between bubble bursts
       betaThresholdValue.textContent = betaThreshold.toFixed(2);
     });
     
-    // Create bubbles when beta threshold is exceeded
-  // Modified createFocusBubbles function
-function createFocusBubbles() {
-  const now = Date.now();
-  if (now - lastBubbleTime < BUBBLE_COOLDOWN) return;
-  lastBubbleTime = now;
-  
-  // Create 2-4 bubbles (reduced from 5-8)
-  const bubbleCount = Math.floor(Math.random() * 3) + 2;
-  
-  for (let i = 0; i < bubbleCount; i++) {
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    
-    // Random size between 10px and 40px
-    const size = Math.floor(Math.random() * 30) + 10;
-    bubble.style.width = `${size}px`;
-    bubble.style.height = `${size}px`;
-    
-    // Position bubble at balloon center
-    const balloonRect = balloon.getBoundingClientRect();
-    const startX = balloonRect.left + balloonRect.width / 2 - size / 2;
-    const startY = balloonRect.top + balloonRect.height / 2 - size / 2;
-    
-    bubble.style.left = `${startX}px`;
-    bubble.style.top = `${startY}px`;
-    
-    // Set random direction for bubble to travel
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 100 + Math.random() * 200;
-    const tx = Math.cos(angle) * distance;
-    const ty = Math.sin(angle) * distance - 100; // Mostly upward
-    
-    bubble.style.setProperty('--tx', `${tx}px`);
-    bubble.style.setProperty('--ty', `${ty}px`);
-    
-    // Remove bubble after animation completes
-    bubble.addEventListener('animationend', () => {
-      bubble.remove();
-    });
-    
-    document.body.appendChild(bubble);
-  }
-}
+    function createFocusBubbles() {
+      const now = Date.now();
+      if (now - lastBubbleTime < BUBBLE_COOLDOWN) return;
+      lastBubbleTime = now;
+      
+      // Create 2-4 bubbles (reduced from 5-8)
+      const bubbleCount = Math.floor(Math.random() * 3) + 2;
+      
+      for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        
+        // Random size between 10px and 40px
+        const size = Math.floor(Math.random() * 30) + 10;
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        
+        // Position bubble at balloon center
+        const balloonRect = balloon.getBoundingClientRect();
+        const startX = balloonRect.left + balloonRect.width / 2 - size / 2;
+        const startY = balloonRect.top + balloonRect.height / 2 - size / 2;
+        
+        bubble.style.left = `${startX}px`;
+        bubble.style.top = `${startY}px`;
+        
+        // Set random direction for bubble to travel
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 100 + Math.random() * 200;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance - 100; // Mostly upward
+        
+        bubble.style.setProperty('--tx', `${tx}px`);
+        bubble.style.setProperty('--ty', `${ty}px`);
+        
+        // Remove bubble after animation completes
+        bubble.addEventListener('animationend', () => {
+          bubble.remove();
+        });
+        
+        document.body.appendChild(bubble);
+      }
+    }
 
     // Expose bubble creation function globally
     window.createFocusBubbles = createFocusBubbles;
     
-    // Utility functions from the original code
+    // Utility functions
     function normalizeSample(sample) {
       const a = 4096;
       return (sample - a / 2) * (2 / a);
@@ -573,39 +569,45 @@ function createFocusBubbles() {
       return sum / buffer_size;
     }
     
-    // Modified updateBarGraph function
-function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
-  const total = deltaP + thetaP + alphaP + betaP + gammaP;
-  if (total <= 0) return;
-  
-  const deltaRel = deltaP / total;
-  const thetaRel = thetaP / total;
-  const alphaRel = alphaP / total;
-  const betaRelInstant = betaP / total;  // Instantaneous beta value
-  const betaRel = getSmoothedBeta(betaRelInstant);  // Smoothed beta value
-  const gammaRel = gammaP / total;
+    function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
+      const total = deltaP + thetaP + alphaP + betaP + gammaP;
+      if (total <= 0) return;
+      
+      const deltaRel = deltaP / total;
+      const thetaRel = thetaP / total;
+      const alphaRel = alphaP / total;
+      const betaRel = betaP / total;
+      const gammaRel = gammaP / total;
 
-  // Update horizontal bar chart
-  document.getElementById("deltaBar").style.width = `${Math.round(deltaRel * 100)}%`;
-  document.getElementById("thetaBar").style.width = `${Math.round(thetaRel * 100)}%`;
-  document.getElementById("alphaBar").style.width = `${Math.round(alphaRel * 100)}%`;
-  document.getElementById("betaBar").style.width = `${Math.round(betaRel * 100)}%`;
-  document.getElementById("gammaBar").style.width = `${Math.round(gammaRel * 100)}%`;
+      // Update horizontal bar chart
+      document.getElementById("deltaBar").style.width = `${Math.round(deltaRel * 100)}%`;
+      document.getElementById("thetaBar").style.width = `${Math.round(thetaRel * 100)}%`;
+      document.getElementById("alphaBar").style.width = `${Math.round(alphaRel * 100)}%`;
+      document.getElementById("betaBar").style.width = `${Math.round(betaRel * 100)}%`;
+      document.getElementById("gammaBar").style.width = `${Math.round(gammaRel * 100)}%`;
 
-  document.getElementById("deltaValue").textContent = `${Math.round(deltaRel * 100)}%`;
-  document.getElementById("thetaValue").textContent = `${Math.round(thetaRel * 100)}%`;
-  document.getElementById("alphaValue").textContent = `${Math.round(alphaRel * 100)}%`;
-  document.getElementById("betaValue").textContent = `${Math.round(betaRel * 100)}%`;
-  document.getElementById("gammaValue").textContent = `${Math.round(gammaRel * 100)}%`;
+      document.getElementById("deltaValue").textContent = `${Math.round(deltaRel * 100)}%`;
+      document.getElementById("thetaValue").textContent = `${Math.round(thetaRel * 100)}%`;
+      document.getElementById("alphaValue").textContent = `${Math.round(alphaRel * 100)}%`;
+      document.getElementById("betaValue").textContent = `${Math.round(betaRel * 100)}%`;
+      document.getElementById("gammaValue").textContent = `${Math.round(gammaRel * 100)}%`;
 
-  // Create bubbles when either instant or smoothed beta exceeds threshold
-  // Using 1.1x threshold for instant check to prevent false positives
-  if (betaRelInstant >= betaThreshold * 1.1 && betaRel >= betaThreshold) {
-    createFocusBubbles();
-  }
-}
+      // Create bubbles when beta exceeds threshold
+      if (betaRel >= betaThreshold) {
+        createFocusBubbles();
+      }
+    }
     
+    function updateData(eegValue) {
+      eegValue = notchFilterCh0.process(eegValue, 1);
+      fftBuffer.push(eegValue);
+      if (fftBuffer.length > FFT_SIZE) fftBuffer.shift();
+      if (samplesReceived % 5 === 0) processFFT(); // Process FFT on every sample for better responsiveness
+      samplesReceived++;
+    }
+
     function processFFT() {
+      if (fftBuffer.length < FFT_SIZE) return;
       const fftMags = fftProcessor.computeMagnitudes(fftBuffer);
       const deltaPower = calculateBandPower(fftMags, DELTA_RANGE);
       const thetaPower = calculateBandPower(fftMags, THETA_RANGE);
@@ -614,15 +616,6 @@ function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
       const gammaPower = calculateBandPower(fftMags, GAMMA_RANGE);
       updateBarGraph(deltaPower, thetaPower, alphaPower, betaPower, gammaPower);
     }
-    
-    function updateData(eegValue) {
-      eegValue = notchFilterCh0.process(eegValue, 1);
-      fftBuffer.push(eegValue);
-      if (fftBuffer.length > FFT_SIZE) fftBuffer.shift();
-      if (samplesReceived % 10 === 0) processFFT();
-    }
-
-   
     
     function processSample(dataView) {
       if (dataView.byteLength !== SINGLE_SAMPLE_LEN) return;
@@ -637,7 +630,6 @@ function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
       const normEEG = normalizeSample(Math.max(0, Math.min(4095, rawEEG)));
       const filteredEEG = applyFilter(normEEG, filterStateCh0);
       updateData(filteredEEG);
-      samplesReceived++;
     }
     
     function handleNotification(event) {
