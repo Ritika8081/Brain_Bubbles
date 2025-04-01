@@ -107,6 +107,8 @@
       box-shadow: 0 0 10px rgba(255,255,255,0.8);
       animation: rise 4s linear forwards;
       z-index: 3;
+      will-change: transform, opacity;  /* Helps browser optimize animations */
+      contain: content;  /* Limits repaint area */
     }
     
     .control-panel {
@@ -237,6 +239,7 @@
       border-radius: 10px;
       transition: width 0.3s;
       box-shadow: 0 0 5px rgba(255,255,255,0.3);
+      will-change: width;  /* Optimizes bar graph animations */
     }
     
     .delta-bar { background: #3498db; }
@@ -398,6 +401,10 @@
     let buffer_size = 128;
     let circular_buffer = new Array(buffer_size).fill(0);
     let data_index = 0, sum = 0;
+
+    // Bubble cooldown system
+let lastBubbleTime = 0;
+const BUBBLE_COOLDOWN = 300; // ms between bubble bursts
     
     // Notch filter for 50Hz noise
     class Notch {
@@ -486,47 +493,50 @@
     });
     
     // Create bubbles when beta threshold is exceeded
-    function createFocusBubbles() {
-      if (Date.now() - lastBubbleTime < 500) return; // Max 2 bubbles per second
-  lastBubbleTime = Date.now();
-  // Reduce number of bubbles
-  const bubbleCount = Math.floor(Math.random() * 3) + 2; // 2-4 bubbles
-
-      for (let i = 0; i < bubbleCount; i++) {
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        
-        // Random size between 10px and 40px
-        const size = Math.floor(Math.random() * 30) + 10;
-        bubble.style.width = `${size}px`;
-        bubble.style.height = `${size}px`;
-        
-        // Position bubble at balloon center
-        const balloonRect = balloon.getBoundingClientRect();
-        const startX = balloonRect.left + balloonRect.width / 2 - size / 2;
-        const startY = balloonRect.top + balloonRect.height / 2 - size / 2;
-        
-        bubble.style.left = `${startX}px`;
-        bubble.style.top = `${startY}px`;
-        
-        // Set random direction for bubble to travel
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 100 + Math.random() * 200;
-        const tx = Math.cos(angle) * distance;
-        const ty = Math.sin(angle) * distance - 100; // Mostly upward
-        
-        bubble.style.setProperty('--tx', `${tx}px`);
-        bubble.style.setProperty('--ty', `${ty}px`);
-        
-        // Remove bubble after animation completes
-        bubble.addEventListener('animationend', () => {
-          bubble.remove();
-        });
-        
-        document.body.appendChild(bubble);
-      }
-    }
+  // Modified createFocusBubbles function
+function createFocusBubbles() {
+  const now = Date.now();
+  if (now - lastBubbleTime < BUBBLE_COOLDOWN) return;
+  lastBubbleTime = now;
+  
+  // Create 2-4 bubbles (reduced from 5-8)
+  const bubbleCount = Math.floor(Math.random() * 3) + 2;
+  
+  for (let i = 0; i < bubbleCount; i++) {
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
     
+    // Random size between 10px and 40px
+    const size = Math.floor(Math.random() * 30) + 10;
+    bubble.style.width = `${size}px`;
+    bubble.style.height = `${size}px`;
+    
+    // Position bubble at balloon center
+    const balloonRect = balloon.getBoundingClientRect();
+    const startX = balloonRect.left + balloonRect.width / 2 - size / 2;
+    const startY = balloonRect.top + balloonRect.height / 2 - size / 2;
+    
+    bubble.style.left = `${startX}px`;
+    bubble.style.top = `${startY}px`;
+    
+    // Set random direction for bubble to travel
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 100 + Math.random() * 200;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance - 100; // Mostly upward
+    
+    bubble.style.setProperty('--tx', `${tx}px`);
+    bubble.style.setProperty('--ty', `${ty}px`);
+    
+    // Remove bubble after animation completes
+    bubble.addEventListener('animationend', () => {
+      bubble.remove();
+    });
+    
+    document.body.appendChild(bubble);
+  }
+}
+
     // Expose bubble creation function globally
     window.createFocusBubbles = createFocusBubbles;
     
@@ -563,34 +573,37 @@
       return sum / buffer_size;
     }
     
-    function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
-      const total = deltaP + thetaP + alphaP + betaP + gammaP;
-      if (total <= 0) return;
-      
-      const deltaRel = deltaP / total;
-      const thetaRel = thetaP / total;
-      const alphaRel = alphaP / total;
-      const betaRel = getSmoothedBeta(betaP / total);
-      const gammaRel = gammaP / total;
+    // Modified updateBarGraph function
+function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
+  const total = deltaP + thetaP + alphaP + betaP + gammaP;
+  if (total <= 0) return;
+  
+  const deltaRel = deltaP / total;
+  const thetaRel = thetaP / total;
+  const alphaRel = alphaP / total;
+  const betaRelInstant = betaP / total;  // Instantaneous beta value
+  const betaRel = getSmoothedBeta(betaRelInstant);  // Smoothed beta value
+  const gammaRel = gammaP / total;
 
-      // Update horizontal bar chart
-      document.getElementById("deltaBar").style.width = `${Math.round(deltaRel * 100)}%`;
-      document.getElementById("thetaBar").style.width = `${Math.round(thetaRel * 100)}%`;
-      document.getElementById("alphaBar").style.width = `${Math.round(alphaRel * 100)}%`;
-      document.getElementById("betaBar").style.width = `${Math.round(betaRel * 100)}%`;
-      document.getElementById("gammaBar").style.width = `${Math.round(gammaRel * 100)}%`;
+  // Update horizontal bar chart
+  document.getElementById("deltaBar").style.width = `${Math.round(deltaRel * 100)}%`;
+  document.getElementById("thetaBar").style.width = `${Math.round(thetaRel * 100)}%`;
+  document.getElementById("alphaBar").style.width = `${Math.round(alphaRel * 100)}%`;
+  document.getElementById("betaBar").style.width = `${Math.round(betaRel * 100)}%`;
+  document.getElementById("gammaBar").style.width = `${Math.round(gammaRel * 100)}%`;
 
-      document.getElementById("deltaValue").textContent = `${Math.round(deltaRel * 100)}%`;
-      document.getElementById("thetaValue").textContent = `${Math.round(thetaRel * 100)}%`;
-      document.getElementById("alphaValue").textContent = `${Math.round(alphaRel * 100)}%`;
-      document.getElementById("betaValue").textContent = `${Math.round(betaRel * 100)}%`;
-      document.getElementById("gammaValue").textContent = `${Math.round(gammaRel * 100)}%`;
+  document.getElementById("deltaValue").textContent = `${Math.round(deltaRel * 100)}%`;
+  document.getElementById("thetaValue").textContent = `${Math.round(thetaRel * 100)}%`;
+  document.getElementById("alphaValue").textContent = `${Math.round(alphaRel * 100)}%`;
+  document.getElementById("betaValue").textContent = `${Math.round(betaRel * 100)}%`;
+  document.getElementById("gammaValue").textContent = `${Math.round(gammaRel * 100)}%`;
 
-      // Create bubbles when beta threshold is exceeded
-      if (betaRel >= betaThreshold) {
-        createFocusBubbles();
-      }
-    }
+  // Create bubbles when either instant or smoothed beta exceeds threshold
+  // Using 1.1x threshold for instant check to prevent false positives
+  if (betaRelInstant >= betaThreshold * 1.1 && betaRel >= betaThreshold) {
+    createFocusBubbles();
+  }
+}
     
     function processFFT() {
       const fftMags = fftProcessor.computeMagnitudes(fftBuffer);
@@ -606,8 +619,10 @@
       eegValue = notchFilterCh0.process(eegValue, 1);
       fftBuffer.push(eegValue);
       if (fftBuffer.length > FFT_SIZE) fftBuffer.shift();
-      if (samplesReceived % 20 === 0) processFFT();
+      if (samplesReceived % 10 === 0) processFFT();
     }
+
+   
     
     function processSample(dataView) {
       if (dataView.byteLength !== SINGLE_SAMPLE_LEN) return;
