@@ -1,569 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>Focus Balloon - EEG Game</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EEG Focus Balloon</title>
   <style>
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --secondary: #10b981;
-      --dark: #1e293b;
-      --darker: #0f172a;
-      --light: #f8fafc;
-      --gray: #94a3b8;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-    }
-
-    * {
-      box-sizing: border-box;
+    body {
       margin: 0;
       padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--darker);
-      color: var(--light);
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
+      background: linear-gradient(to bottom, #012438, #051d35);
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      font-family: Arial, sans-serif;
+      position: relative;
     }
 
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      padding: 1rem;
-      max-width: 1800px;
-      margin: 0 auto;
+    /* Underwater bubbles background */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
+      height: 100%;
+      opacity: 0.6;
+      z-index: 0;
+      animation: bubbleFlow 20s linear infinite;
     }
 
-    .header {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(10px);
-      border-radius: 0.75rem;
-      padding: 1rem 1.5rem;
-      margin-bottom: 1rem;
+    @keyframes bubbleFlow {
+      0% {
+        background-position: 0 0;
+      }
+
+      100% {
+        background-position: 0 1000px;
+      }
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
       display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
+      justify-content: center;
       align-items: center;
-      justify-content: space-between;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1;
     }
 
-    .title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: white;
-      margin-right: auto;
-    }
-
-    .status {
-      background: rgba(15, 23, 42, 0.7);
-      padding: 0.5rem 1rem;
-      border-radius: 2rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .status-indicator {
-      width: 0.75rem;
-      height: 0.75rem;
+    .balloon {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      /* Make height equal to width for perfect circle */
+      background: radial-gradient(circle at 30% 30%, rgba(0, 59, 101, 0.8), rgba(0, 48, 97, 0.9));
       border-radius: 50%;
-      background: var(--gray);
+      /* Simple 50% for perfect circle */
+      box-shadow:
+        inset -10px -10px 30px rgba(255, 255, 255, 0.3),
+        inset 10px 10px 30px rgba(0, 0, 0, 0.2),
+        0 0 20px rgba(0, 200, 255, 0.5);
+      transform-origin: center center;
+      /* Center the transform origin */
+      animation: float 3s ease-in-out infinite;
+      z-index: 2;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      overflow: hidden;
     }
 
-    .status.connected .status-indicator {
-      background: var(--success);
+    /* Water reflection effect */
+    .balloon::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 40%;
+      background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
+      border-radius: 50%;
+      filter: blur(5px);
     }
 
-    .status.streaming .status-indicator {
-      background: var(--primary);
+    .balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 0 0 5px 5px;
+      z-index: 1;
     }
 
-    .controls {
+
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(200, 240, 255, 0.3));
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      animation: rise 4s linear forwards;
+      z-index: 3;
+      will-change: transform, opacity;
+      /* Helps browser optimize animations */
+      contain: content;
+      /* Limits repaint area */
+    }
+
+    .control-panel {
+      position: absolute;
+      bottom: 20px;
+      background: rgba(0, 50, 100, 0.3);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+      flex-direction: column;
       align-items: center;
-    }
-
-    .btn {
-      padding: 0.5rem 1.25rem;
-      border-radius: 2rem;
-      font-weight: 600;
-      font-size: 0.875rem;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      white-space: nowrap;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    select {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 2rem;
-      font-size: 0.875rem;
-      outline: none;
-      cursor: pointer;
-    }
-
-    select:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    select option {
-      background: var(--dark);
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      z-index: 10;
     }
 
     .slider-container {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      margin-bottom: 10px;
     }
 
     .slider-label {
-      font-size: 0.875rem;
-      color: var(--gray);
+      color: white;
+      margin-right: 10px;
+      width: 120px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     }
 
     input[type="range"] {
       -webkit-appearance: none;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
+      width: 200px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
       outline: none;
     }
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
+      background: #00b4ff;
       border-radius: 50%;
-      background: var(--primary);
       cursor: pointer;
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 0 5px rgba(0, 180, 255, 0.8);
     }
 
-    .content {
+    .value-display {
+      color: white;
+      margin-left: 10px;
+      min-width: 40px;
+      text-align: right;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    button {
+      background: rgba(0, 150, 255, 0.3);
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+      margin: 5px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    button:hover:not(:disabled) {
+      background: rgba(0, 180, 255, 0.5);
+      box-shadow: 0 0 10px rgba(0, 180, 255, 0.5);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: rgba(100, 100, 100, 0.3);
+    }
+
+    .status {
+      color: white;
+      margin-top: 10px;
+      font-size: 14px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .band-display {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 50, 100, 0.3);
+      padding: 15px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
       display: flex;
-      flex: 1;
-      gap: 1rem;
-      overflow: hidden;
+      flex-direction: column;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      z-index: 10;
     }
 
-    .game-container {
-      flex: 2;
-      min-width: 600px;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      border-radius: 0.75rem;
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    .band-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
     }
 
-    .game-canvas {
-      width: 100%;
+    .band-label {
+      width: 80px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .band-bar-container {
+      width: 150px;
+      height: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 0 10px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .band-bar {
       height: 100%;
-      display: block;
+      border-radius: 10px;
+      transition: width 0.3s;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+      will-change: width;
+      /* Optimizes bar graph animations */
     }
 
-    .panel-container {
-      flex: 1;
-      min-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      overflow: hidden;
+    .delta-bar {
+      background: #3498db;
     }
 
-    .panel {
-      background: rgba(15, 23, 42, 0.7);
-      border-radius: 0.75rem;
-      padding: 1rem;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
+    .theta-bar {
+      background: #2ecc71;
     }
 
-    .panel-header {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      color: var(--light);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .alpha-bar {
+      background: #f1c40f;
     }
 
-    .threshold-control {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: auto;
+    .beta-bar {
+      background: #e74c3c;
     }
 
-    .vertical-slider-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      width: 100%;
+    .gamma-bar {
+      background: #9b59b6;
     }
 
-    .vertical-slider {
-      -webkit-appearance: slider-vertical;
-      width: 100%;
-      height: 150px;
-      padding: 0 0.5rem;
-    }
+    @keyframes float {
 
-    .slider-value {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--primary);
-      margin-top: 0.5rem;
-    }
-
-    .eeg-plot {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, #000428, #004e92);
-      border-radius: 0.5rem;
-    }
-
-    @media (max-width: 1200px) {
-      .content {
-        flex-direction: column;
+      0%,
+      100% {
+        transform: translateY(0) rotate(0deg);
       }
-      
-      .game-container,
-      .panel-container {
-        min-width: 100%;
+
+      25% {
+        transform: translateY(-10px) rotate(2deg);
+      }
+
+      50% {
+        transform: translateY(-15px) rotate(0deg);
+      }
+
+      75% {
+        transform: translateY(-10px) rotate(-2deg);
       }
     }
 
-    @media (max-width: 768px) {
-      .header {
-        flex-direction: column;
-        align-items: stretch;
+    @keyframes rise {
+      0% {
+        opacity: 0.7;
+        transform: scale(0);
       }
-      
-      .title {
-        margin-bottom: 0.5rem;
+
+      20% {
+        opacity: 0.9;
+        transform: scale(1);
       }
-      
-      .controls {
-        width: 100%;
+
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(1.2);
       }
-      
-      .btn {
-        flex: 1;
-        justify-content: center;
+    }
+
+    /* Underwater light rays */
+    .light-ray {
+      position: absolute;
+      width: 2px;
+      height: 150%;
+      background: linear-gradient(to bottom,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent);
+      transform: rotate(20deg);
+      animation: rayMove 15s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes rayMove {
+      0% {
+        transform: rotate(20deg) translateY(-100%);
+      }
+
+      100% {
+        transform: rotate(20deg) translateY(100%);
       }
     }
   </style>
 </head>
 
 <body>
-  <div id="app">
-    <header class="header">
-      <h1 class="title">Focus Balloon</h1>
-      
-      <div class="controls">
-        <button id="connectBtn" class="btn btn-primary">Connect</button>
-        <button id="disconnectBtn" class="btn btn-secondary">Disconnect</button>
-        <button id="startBtn" class="btn btn-primary">Start</button>
-        <button id="stopBtn" class="btn btn-secondary">Stop</button>
-        
-        <select id="channelSelector">
-          <option value="all">All Channels</option>
-          <option value="ch0">Channel 0</option>
-          <option value="ch1">Channel 1</option>
-        </select>
-        
-        <div class="slider-container">
-          <span class="slider-label">Gain:</span>
-          <input type="range" id="gainSlider" min="0.1" max="5" step="0.1" value="1">
-        </div>
-      </div>
-      
-      <div id="statusText" class="status">
-        <span class="status-indicator"></span>
-        <span>Waiting for connection</span>
-      </div>
-    </header>
+  <!-- Light rays for underwater effect -->
+  <div class="light-ray" style="left: 10%; animation-delay: 0s;"></div>
+  <div class="light-ray" style="left: 30%; animation-delay: 3s;"></div>
+  <div class="light-ray" style="left: 50%; animation-delay: 6s;"></div>
+  <div class="light-ray" style="left: 70%; animation-delay: 9s;"></div>
+  <div class="light-ray" style="left: 90%; animation-delay: 12s;"></div>
 
-    <div class="content">
-      <div class="game-container">
-        <canvas id="gameCanvas" class="game-canvas"></canvas>
-      </div>
+  <div class="container">
+    <div class="balloon"></div>
+    <div class="string"></div>
+  </div>
 
-      <div class="panel-container">
-        <div class="panel">
-          <h2 class="panel-header">EEG Waveform</h2>
-          <canvas id="plotCanvas" class="eeg-plot"></canvas>
-        </div>
-
-        <div class="panel">
-          <h2 class="panel-header">Beta Threshold Control</h2>
-          
-          <div class="threshold-control">
-            <div class="vertical-slider-container">
-              <label for="betaThresholdSlider">Threshold Level</label>
-              <input type="range" 
-                     id="betaThresholdSlider" 
-                     min="0" 
-                     max="1" 
-                     step="0.01" 
-                     value="0.40" 
-                     orient="vertical"
-                     class="vertical-slider">
-              <span id="betaThresholdValue" class="slider-value">0.40</span>
-            </div>
-          </div>
-        </div>
+  <div class="band-display">
+    <div class="band-row">
+      <span class="band-label">Delta</span>
+      <div class="band-bar-container">
+        <div id="deltaBar" class="band-bar delta-bar" style="width: 0%;"></div>
       </div>
+      <span id="deltaValue">0%</span>
+    </div>
+    <div class="band-row">
+      <span class="band-label">Theta</span>
+      <div class="band-bar-container">
+        <div id="thetaBar" class="band-bar theta-bar" style="width: 0%;"></div>
+      </div>
+      <span id="thetaValue">0%</span>
+    </div>
+    <div class="band-row">
+      <span class="band-label">Alpha</span>
+      <div class="band-bar-container">
+        <div id="alphaBar" class="band-bar alpha-bar" style="width: 0%;"></div>
+      </div>
+      <span id="alphaValue">0%</span>
+    </div>
+    <div class="band-row">
+      <span class="band-label">Beta</span>
+      <div class="band-bar-container">
+        <div id="betaBar" class="band-bar beta-bar" style="width: 0%;"></div>
+      </div>
+      <span id="betaValue">0%</span>
+    </div>
+    <div class="band-row">
+      <span class="band-label">Gamma</span>
+      <div class="band-bar-container">
+        <div id="gammaBar" class="band-bar gamma-bar" style="width: 0%;"></div>
+      </div>
+      <span id="gammaValue">0%</span>
     </div>
   </div>
 
+  <div class="control-panel">
+    <div class="slider-container">
+      <span class="slider-label">Beta Threshold:</span>
+      <input type="range" id="betaThresholdSlider" min="0.1" max="0.9" step="0.05" value="0.4">
+      <span class="value-display" id="betaThresholdValue">0.40</span>
+    </div>
+    <div class="button-group">
+      <button id="connectBtn">Connect Device</button>
+      <button id="disconnectBtn" disabled>Disconnect</button>
+      <button id="startBtn" disabled>Start Stream</button>
+      <button id="stopBtn" disabled>Stop Stream</button>
+    </div>
+    <div class="status" id="statusText">Not connected</div>
+  </div>
+
+  <!-- The rest of your JavaScript remains exactly the same -->
   <script>
-    // ============ GAME CODE ============
-    const gameCanvas = document.getElementById("gameCanvas");
-    const gctx = gameCanvas.getContext("2d");
 
-    function resizeGameCanvas() {
-      gameCanvas.width = gameCanvas.clientWidth;
-      gameCanvas.height = gameCanvas.clientHeight;
-    }
-    window.addEventListener("resize", resizeGameCanvas);
-    resizeGameCanvas();
+    // DOM elements
+    const balloon = document.querySelector('.balloon');
+    const container = document.querySelector('.container');
+    const betaThresholdSlider = document.getElementById('betaThresholdSlider');
+    const betaThresholdValue = document.getElementById('betaThresholdValue');
+    const connectBtn = document.getElementById("connectBtn");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const statusText = document.getElementById("statusText");
 
-    // Beautiful gradient background
-    function drawBackground() {
-      const gradient = gctx.createLinearGradient(0, 0, 0, gameCanvas.height);
-      gradient.addColorStop(0, '#1a2980');
-      gradient.addColorStop(1, '#26d0ce');
-      gctx.fillStyle = gradient;
-      gctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
-      
-      // Draw some subtle stars
-      gctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      for (let i = 0; i < 100; i++) {
-        const x = Math.random() * gameCanvas.width;
-        const y = Math.random() * gameCanvas.height;
-        const radius = Math.random() * 1.5;
-        gctx.beginPath();
-        gctx.arc(x, y, radius, 0, Math.PI * 2);
-        gctx.fill();
-      }
-    }
+    // BLE constants
+    const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+    const DATA_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+    const CONTROL_CHAR_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
+    const SINGLE_SAMPLE_LEN = 7, BLOCK_COUNT = 10;
+    const NEW_PACKET_LEN = SINGLE_SAMPLE_LEN * BLOCK_COUNT;
 
-    // Balloon properties
-    const balloon = {
-      x: gameCanvas.width / 2,
-      y: gameCanvas.height / 2,
-      radius: 80,
-      color: '#ff6b6b',
-      stringLength: 150,
-      floating: 0,
-      floatSpeed: 0.05
-    };
+    // EEG processing constants
+    const FFT_SIZE = 256;
+    const SAMPLE_RATE = 500;
+    const FREQ_RESOLUTION = SAMPLE_RATE / FFT_SIZE;
+    const DELTA_RANGE = [0.5, 4];
+    const THETA_RANGE = [4, 8];
+    const ALPHA_RANGE = [8, 12];
+    const BETA_RANGE = [12, 30];
+    const GAMMA_RANGE = [30, 100];
 
-    // Bubbles array
-    const bubbles = [];
-    const maxBubbles = 50;
+    // Variables for BLE connection
+    let device = null, server = null, controlChar = null, dataChar = null;
+    let streaming = false, connected = false;
+    let prevSampleCounter = null, samplesReceived = 0;
 
-    // Create a new bubble
-    function createBubble() {
-      if (bubbles.length >= maxBubbles) return;
-      
-      const size = Math.random() * 30 + 10;
-      const speed = Math.random() * 2 + 1;
-      const angle = Math.random() * Math.PI * 2;
-      
-      bubbles.push({
-        x: balloon.x + Math.cos(angle) * balloon.radius,
-        y: balloon.y + Math.sin(angle) * balloon.radius,
-        size: size,
-        speed: speed,
-        angle: angle,
-        opacity: 1,
-        color: `hsla(${Math.random() * 60 + 180}, 80%, 60%, 0.8)`
-      });
-    }
+    // Variables for EEG processing
+    let fftBuffer = new Array(FFT_SIZE).fill(0);
+    let filterStateCh0 = { z1: 0, z2: 0, x1: 0 };
+    let betaThreshold = 0.40;  // initial threshold
 
-    // Update bubbles
-    function updateBubbles() {
-      for (let i = bubbles.length - 1; i >= 0; i--) {
-        const bubble = bubbles[i];
-        
-        // Move bubble outward
-        bubble.x += Math.cos(bubble.angle) * bubble.speed;
-        bubble.y += Math.sin(bubble.angle) * bubble.speed - bubble.speed * 0.5;
-        bubble.opacity -= 0.01;
-        
-        // Remove bubble if faded out
-        if (bubble.opacity <= 0) {
-          bubbles.splice(i, 1);
-        }
-      }
-    }
+    // Buffer for smoothing beta values
+    let buffer_size = 128;
+    let circular_buffer = new Array(buffer_size).fill(0);
+    let data_index = 0, sum = 0;
 
-    // Draw balloon
-    function drawBalloon() {
-      // Update floating animation
-      balloon.floating += balloon.floatSpeed;
-      const floatOffset = Math.sin(balloon.floating) * 10;
-      
-      // Draw string
-      gctx.beginPath();
-      gctx.moveTo(balloon.x, balloon.y + balloon.radius);
-      gctx.lineTo(balloon.x, balloon.y + balloon.radius + balloon.stringLength);
-      gctx.strokeStyle = '#ffffff';
-      gctx.lineWidth = 2;
-      gctx.stroke();
-      
-      // Draw balloon
-      gctx.beginPath();
-      gctx.ellipse(
-        balloon.x, 
-        balloon.y + floatOffset, 
-        balloon.radius, 
-        balloon.radius * 1.2, 
-        0, 0, Math.PI * 2
-      );
-      
-      const gradient = gctx.createRadialGradient(
-        balloon.x - balloon.radius/3, 
-        balloon.y - balloon.radius/3 + floatOffset, 
-        balloon.radius/4,
-        balloon.x, 
-        balloon.y + floatOffset, 
-        balloon.radius
-      );
-      gradient.addColorStop(0, '#ff8e8e');
-      gradient.addColorStop(1, balloon.color);
-      
-      gctx.fillStyle = gradient;
-      gctx.fill();
-      
-      // Balloon highlight
-      gctx.beginPath();
-      gctx.ellipse(
-        balloon.x - balloon.radius/3, 
-        balloon.y - balloon.radius/3 + floatOffset, 
-        balloon.radius/4, 
-        balloon.radius/5, 
-        0, 0, Math.PI * 2
-      );
-      gctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      gctx.fill();
-    }
+    // Bubble cooldown system
+    let lastBubbleTime = 0;
+    const BUBBLE_COOLDOWN = 300; // ms between bubble bursts
 
-    // Draw bubbles
-    function drawBubbles() {
-      bubbles.forEach(bubble => {
-        gctx.beginPath();
-        gctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
-        
-        const bubbleGradient = gctx.createRadialGradient(
-          bubble.x - bubble.size/4, 
-          bubble.y - bubble.size/4, 
-          bubble.size/4,
-          bubble.x, 
-          bubble.y, 
-          bubble.size
-        );
-        bubbleGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-        bubbleGradient.addColorStop(1, bubble.color);
-        
-        gctx.fillStyle = bubbleGradient;
-        gctx.globalAlpha = bubble.opacity;
-        gctx.fill();
-        
-        // Bubble highlight
-        gctx.beginPath();
-        gctx.arc(
-          bubble.x - bubble.size/4, 
-          bubble.y - bubble.size/4, 
-          bubble.size/5, 
-          0, 
-          Math.PI * 2
-        );
-        gctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        gctx.fill();
-        
-        gctx.globalAlpha = 1;
-      });
-    }
-
-    // Game loop
-    function gameLoop() {
-      gctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-      drawBackground();
-      updateBubbles();
-      drawBalloon();
-      drawBubbles();
-      requestAnimationFrame(gameLoop);
-    }
-
-    // Expose function to create bubbles when beta threshold is exceeded
-    window.createFocusBubbles = function() {
-      // Create multiple bubbles when focused
-      for (let i = 0; i < 5; i++) {
-        createBubble();
-      }
-    };
-
-    gameLoop();
-
-    // ============ EEG CODE ============
+    // Notch filter for 50Hz noise
     class Notch {
       constructor() {
         this.z1_1 = 0; this.z2_1 = 0;
@@ -584,85 +465,10 @@
         return output;
       }
     }
-
     let notchFilterCh0 = new Notch();
-    let notchFilterCh1 = new Notch();
     notchFilterCh0.setSamplingRate(500);
-    notchFilterCh1.setSamplingRate(500);
 
-    let device = null, server = null, controlChar = null, dataChar = null;
-    let streaming = false, connected = false;
-
-    const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-    const DATA_CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-    const CONTROL_CHAR_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
-    const SINGLE_SAMPLE_LEN = 7, BLOCK_COUNT = 10;
-    const NEW_PACKET_LEN = SINGLE_SAMPLE_LEN * BLOCK_COUNT;
-
-    let prevSampleCounter = null, samplesReceived = 0;
-    const THRESHOLD = 0.5;
-    let lastActionTime = 0;
-    const DEBOUNCE_TIME = 1000;
-
-    // Plot canvas for EEG waveform (renamed context variable to avoid collision)
-    const plotCanvas = document.getElementById("plotCanvas");
-    const plotCtx = plotCanvas.getContext("2d");
-    function resizePlotCanvas() {
-      plotCanvas.width = plotCanvas.clientWidth;
-      plotCanvas.height = plotCanvas.clientHeight;
-    }
-    window.addEventListener("resize", resizePlotCanvas);
-    resizePlotCanvas();
-
-    let dataCh0 = new Array(500).fill(0);
-    let dataCh1 = new Array(500).fill(0);
-
-    let filterStateCh0 = { z1: 0, z2: 0, x1: 0 };
-    let filterStateCh1 = { z1: 0, z2: 0, x1: 0 };
-
-    let gain = 1;
-    const gainSlider = document.getElementById("gainSlider");
-    gainSlider.disabled = true;  // disable until connected
-    gainSlider.addEventListener("input", (e) => {
-      gain = parseFloat(e.target.value);
-    });
-
-    let selectedChannel = "all";
-    const channelSelector = document.getElementById("channelSelector");
-    channelSelector.disabled = true;
-    channelSelector.addEventListener("change", (e) => {
-      selectedChannel = e.target.value;
-    });
-
-    let width = plotCanvas.width, height = plotCanvas.height;
-    window.addEventListener("resize", () => {
-      width = plotCanvas.width; height = plotCanvas.height;
-    });
-
-    const FFT_SIZE = 256;
-    const SAMPLE_RATE = 500;
-    const FREQ_RESOLUTION = SAMPLE_RATE / FFT_SIZE;
-
-    const DELTA_RANGE = [0.5, 4],
-      THETA_RANGE = [4, 8],
-      ALPHA_RANGE = [8, 12],
-      BETA_RANGE = [12, 30],
-      GAMMA_RANGE = [30, 100];
-
-    let fftBuffer = new Array(FFT_SIZE).fill(0);
-    function normalizeSample(sample) {
-      const a = 4096;
-      return (sample - a / 2) * (2 / a);
-    }
-
-    function applyFilter(input, state) {
-      state.x1 = input - (-1.47548044 * state.z1) - (0.58691951 * state.z2);
-      const output = 0.02785977 * state.x1 + 0.05571953 * state.z1 + 0.02785977 * state.z2;
-      state.z2 = state.z1;
-      state.z1 = state.x1;
-      return output;
-    }
-
+    // FFT implementation
     class FFT {
       constructor(size) {
         this.size = size;
@@ -692,7 +498,7 @@
         for (let i = 0; i < n - 1; i++) {
           if (i < j) {
             [real[i], real[j]] = [real[j], real[i]];
-            [imag[i], imag[j]] = [imag[j], imag[i]];
+            [imag[i], imag[j]] = [imag[j], real[i]];
           }
           let k = n / 2;
           while (k <= j) { j -= k; k /= 2; }
@@ -718,6 +524,74 @@
     }
     const fftProcessor = new FFT(FFT_SIZE);
 
+    // Update threshold value from slider
+    betaThresholdSlider.addEventListener('input', (e) => {
+      betaThreshold = parseFloat(e.target.value);
+      betaThresholdValue.textContent = betaThreshold.toFixed(2);
+    });
+
+    // Create bubbles when beta threshold is exceeded
+    // Modified createFocusBubbles function
+    function createFocusBubbles() {
+      const now = Date.now();
+      if (now - lastBubbleTime < BUBBLE_COOLDOWN) return;
+      lastBubbleTime = now;
+
+      // Create 2-4 bubbles (reduced from 5-8)
+      const bubbleCount = Math.floor(Math.random() * 3) + 2;
+
+      for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+
+        // Random size between 10px and 40px
+        const size = Math.floor(Math.random() * 30) + 10;
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+
+        // Position bubble at balloon center
+        const balloonRect = balloon.getBoundingClientRect();
+        const startX = balloonRect.left + balloonRect.width / 2 - size / 2;
+        const startY = balloonRect.top + balloonRect.height / 2 - size / 2;
+
+        bubble.style.left = `${startX}px`;
+        bubble.style.top = `${startY}px`;
+
+        // Set random direction for bubble to travel
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 100 + Math.random() * 200;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance - 100; // Mostly upward
+
+        bubble.style.setProperty('--tx', `${tx}px`);
+        bubble.style.setProperty('--ty', `${ty}px`);
+
+        // Remove bubble after animation completes
+        bubble.addEventListener('animationend', () => {
+          bubble.remove();
+        });
+
+        document.body.appendChild(bubble);
+      }
+    }
+
+    // Expose bubble creation function globally
+    window.createFocusBubbles = createFocusBubbles;
+
+    // Utility functions from the original code
+    function normalizeSample(sample) {
+      const a = 3249;
+      return (sample - a / 2) * (2 / a);
+    }
+
+    function applyFilter(input, state) {
+      state.x1 = input - (-1.47548044 * state.z1) - (0.58691951 * state.z2);
+      const output = 0.02785977 * state.x1 + 0.05571953 * state.z1 + 0.02785977 * state.z2;
+      state.z2 = state.z1;
+      state.z1 = state.x1;
+      return output;
+    }
+
     function calculateBandPower(fftMagnitudes, freqRange) {
       const [startFreq, endFreq] = freqRange;
       const startIndex = Math.max(1, Math.floor(startFreq / FREQ_RESOLUTION));
@@ -728,19 +602,7 @@
       }
       return power;
     }
-    let betaThreshold = 0.40;  // initial threshold
 
-    const betaThresholdSlider = document.getElementById("betaThresholdSlider");
-    const betaThresholdValue = document.getElementById("betaThresholdValue");
-
-    betaThresholdSlider.addEventListener("input", (e) => {
-      betaThreshold = parseFloat(e.target.value);
-      document.getElementById("betaThresholdValue").textContent = betaThreshold.toFixed(2);
-    });
-
-    let buffer_size = 128;
-    let circular_buffer = new Array(buffer_size).fill(0);
-    let data_index = 0, sum = 0;
     function getSmoothedBeta(beta) {
       sum -= circular_buffer[data_index];
       sum += beta;
@@ -749,64 +611,71 @@
       return sum / buffer_size;
     }
 
-    function drawWaveform() {
-      plotCtx.clearRect(0, 0, plotCanvas.width, plotCanvas.height);
-      function drawChannel(data, color) {
-        plotCtx.strokeStyle = color;
-        plotCtx.lineWidth = 2;
-        plotCtx.beginPath();
-        for (let i = 0; i < data.length; i++) {
-          const x = (i / (data.length - 1)) * plotCanvas.width;
-          const y = plotCanvas.height / 2 - (data[i] * gain * (plotCanvas.height / 2));
-          if (i === 0) plotCtx.moveTo(x, y);
-          else plotCtx.lineTo(x, y);
-        }
-        plotCtx.stroke();
-      }
-      if (selectedChannel === "all" || selectedChannel === "ch0") {
-        drawChannel(dataCh0, "cyan");
-      }
-      if (selectedChannel === "all" || selectedChannel === "ch1") {
-        drawChannel(dataCh1, "lime");
-      }
-      requestAnimationFrame(drawWaveform);
-    }
-    drawWaveform();
+    // Modified updateBarGraph function
+    function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
+      const total = deltaP + thetaP + alphaP + betaP + gammaP;
+      if (total <= 0) return;
 
-    function updateData(eegValue, dummy) {
+      const deltaRel = deltaP / total;
+      const thetaRel = thetaP / total;
+      const alphaRel = alphaP / total;
+      const betaRelInstant = betaP / total;  // Instantaneous beta value
+      const betaRel = getSmoothedBeta(betaRelInstant);  // Smoothed beta value
+      const gammaRel = gammaP / total;
+
+      // Update horizontal bar chart
+      document.getElementById("deltaBar").style.width = `${Math.round(deltaRel * 100)}%`;
+      document.getElementById("thetaBar").style.width = `${Math.round(thetaRel * 100)}%`;
+      document.getElementById("alphaBar").style.width = `${Math.round(alphaRel * 100)}%`;
+      document.getElementById("betaBar").style.width = `${Math.round(betaRel * 100)}%`;
+      document.getElementById("gammaBar").style.width = `${Math.round(gammaRel * 100)}%`;
+
+      document.getElementById("deltaValue").textContent = `${Math.round(deltaRel * 100)}%`;
+      document.getElementById("thetaValue").textContent = `${Math.round(thetaRel * 100)}%`;
+      document.getElementById("alphaValue").textContent = `${Math.round(alphaRel * 100)}%`;
+      document.getElementById("betaValue").textContent = `${Math.round(betaRel * 100)}%`;
+      document.getElementById("gammaValue").textContent = `${Math.round(gammaRel * 100)}%`;
+
+      // Create bubbles when either instant or smoothed beta exceeds threshold
+      // Using 1.1x threshold for instant check to prevent false positives
+      if (betaRelInstant >= betaThreshold * 1.1 && betaRel >= betaThreshold) {
+        createFocusBubbles();
+      }
+    }
+
+    function processFFT() {
+      if (fftBuffer.length < FFT_SIZE) return;
+      const fftMags = fftProcessor.computeMagnitudes(fftBuffer);
+      const deltaPower = calculateBandPower(fftMags, DELTA_RANGE);
+      const thetaPower = calculateBandPower(fftMags, THETA_RANGE);
+      const alphaPower = calculateBandPower(fftMags, ALPHA_RANGE);
+      const betaPower = calculateBandPower(fftMags, BETA_RANGE);
+      const gammaPower = calculateBandPower(fftMags, GAMMA_RANGE);
+      updateBarGraph(deltaPower, thetaPower, alphaPower, betaPower, gammaPower);
+    }
+
+    function updateData(eegValue) {
       eegValue = notchFilterCh0.process(eegValue, 1);
-      dataCh0.push(eegValue);
-      dataCh1.push(eegValue);
-      if (dataCh0.length > 500) dataCh0.shift();
-      if (dataCh1.length > 500) dataCh1.shift();
       fftBuffer.push(eegValue);
       if (fftBuffer.length > FFT_SIZE) fftBuffer.shift();
-      if (samplesReceived % 5 === 0) {
-        const fftMags = fftProcessor.computeMagnitudes(fftBuffer);
-        const betaPower = calculateBandPower(fftMags, BETA_RANGE);
-        const totalPower = calculateBandPower(fftMags, [0.5, 100]);
-        const betaRel = betaPower / totalPower;
-        
-        if (betaRel >= betaThreshold) {
-          if (typeof window.createFocusBubbles === 'function') {
-            window.createFocusBubbles();
-          }
-        }
-      }
+      if (samplesReceived % 10 === 0) processFFT();
     }
+
+
 
     function processSample(dataView) {
       if (dataView.byteLength !== SINGLE_SAMPLE_LEN) return;
 
       const sampleCounter = dataView.getUint8(0);
       prevSampleCounter = sampleCounter;
-      // Read EEG and EMG channels
+
+      // Read EEG channel
       const rawEEG = dataView.getInt16(1, false);
 
-      // Process EEG as before
-      const normEEG = normalizeSample(Math.max(0, Math.min(4095, rawEEG)));
+      // Process EEG
+      const normEEG = normalizeSample(Math.max(0, Math.min(3249, rawEEG)));
       const filteredEEG = applyFilter(normEEG, filterStateCh0);
-      updateData(filteredEEG, filteredEEG);
+      updateData(filteredEEG);
       samplesReceived++;
     }
 
@@ -822,36 +691,15 @@
       }
     }
 
-    const connectBtn = document.getElementById("connectBtn");
-    const disconnectBtn = document.getElementById("disconnectBtn");
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
-
-    // Initially only "Connect" is enabled
-    connectBtn.disabled = false;
-    disconnectBtn.disabled = true;
-    startBtn.disabled = true;
-    stopBtn.disabled = true;
-
     function updateButtonStates() {
       connectBtn.disabled = connected || streaming;
       disconnectBtn.disabled = !connected;
       startBtn.disabled = !connected || streaming;
       stopBtn.disabled = !streaming;
-      channelSelector.disabled = !connected;
-      gainSlider.disabled = !connected;
 
-      const statusEl = document.getElementById("statusText");
-      statusEl.className = "status";
-      if (!connected) {
-        statusEl.textContent = "Not connected";
-      } else if (!streaming) {
-        statusEl.textContent = "Connected";
-        statusEl.classList.add("connected");
-      } else {
-        statusEl.textContent = "Streaming";
-        statusEl.classList.add("streaming");
-      }
+      if (!connected) statusText.textContent = "Not connected";
+      else if (!streaming) statusText.textContent = "Connected but not streaming";
+      else statusText.textContent = "Connected and streaming data";
     }
 
     async function connectBLE() {
@@ -869,8 +717,6 @@
         controlChar = await service.getCharacteristic(CONTROL_CHAR_UUID);
         dataChar = await service.getCharacteristic(DATA_CHAR_UUID);
         connected = true; streaming = false;
-        dataCh0 = new Array(500).fill(0);
-        dataCh1 = new Array(500).fill(0);
         fftBuffer = new Array(FFT_SIZE).fill(0);
         updateButtonStates();
         console.log("Device connected.");
@@ -924,10 +770,12 @@
       }
     }
 
+    // Event listeners for buttons
     connectBtn.addEventListener("click", connectBLE);
     disconnectBtn.addEventListener("click", disconnectBLE);
     startBtn.addEventListener("click", startStream);
     stopBtn.addEventListener("click", stopStream);
   </script>
 </body>
+
 </html>
