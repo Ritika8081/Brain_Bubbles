@@ -599,73 +599,90 @@
       }
       return power;
     }
-    function createSmoother(bufferSize) {
-      const buffers = {
-        alpha: new Array(bufferSize).fill(0),
-        beta: new Array(bufferSize).fill(0),
-        gamma: new Array(bufferSize).fill(0),
-        theta: new Array(bufferSize).fill(0),
-        delta: new Array(bufferSize).fill(0)
-      };
-      const sums = { alpha: 0, beta: 0, gamma: 0, theta: 0, delta: 0 };
-      let index = 0;
 
-      return function getSmoothedValue(band, newValue) {
-        sums[band] -= buffers[band][index];
-        sums[band] += newValue;
-        buffers[band][index] = newValue;
+    // 1) Multi-band smoother class
+    class BandSmoother {
+      constructor(bufferSize) {
+        this.bufferSize = bufferSize;
+        this.buffers = {};
+        this.sums = {};
+        this.index = 0;
 
-        if (band === 'delta') {
-          index = (index + 1) % bufferSize; // Only advance once per full round
+        ['delta', 'theta', 'alpha', 'beta', 'gamma'].forEach(band => {
+          this.buffers[band] = new Array(bufferSize).fill(0);
+          this.sums[band] = 0;
+        });
+      }
+
+      // call once per update with an object of all 5 new values
+      updateAll(bandValues) {
+        for (const band in bandValues) {
+          const val = bandValues[band];
+          this.sums[band] -= this.buffers[band][this.index];
+          this.sums[band] += val;
+          this.buffers[band][this.index] = val;
         }
+        this.index = (this.index + 1) % this.bufferSize;
+      }
 
-        return sums[band] / bufferSize;
-      };
+      // retrieve the current smoothed value for one band
+      getSmoothed(band) {
+        return this.sums[band] / this.bufferSize;
+      }
+
+      // reset everything (e.g. on disconnect)
+      clear() {
+        for (const band in this.buffers) {
+          this.buffers[band].fill(0);
+          this.sums[band] = 0;
+        }
+        this.index = 0;
+      }
     }
 
-
-    const bufferSize = 128;
-    const getSmoothedValue = createSmoother(bufferSize);
-
+    // 2) Instantiate at top of your script
+    const smoother = new BandSmoother(128);
 
 
-    // Modified updateBarGraph function
     function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
+      // total power across all bands
       const total = deltaP + thetaP + alphaP + betaP + gammaP;
       if (total <= 0) return;
 
-      // 1) compute relative (instant) for each
-      const deltaRel = deltaP / total;
-      const thetaRel = thetaP / total;
-      const alphaRel = alphaP / total;
-      const betaRel = betaP / total;
-      const gammaRel = gammaP / total;
+      // 1) compute instantaneous relative power for each band
+      const rels = {
+        delta: deltaP / total,
+        theta: thetaP / total,
+        alpha: alphaP / total,
+        beta: betaP / total,
+        gamma: gammaP / total
+      };
 
-      // 2) get smoothed values
-      const deltaSm = getSmoothedValue('delta', deltaRel);
-      const thetaSm = getSmoothedValue('theta', thetaRel);
-      const alphaSm = getSmoothedValue('alpha', alphaRel);
-      const betaSm = getSmoothedValue('beta', betaRel);
-      const gammaSm = getSmoothedValue('gamma', gammaRel);
+      // 2) feed all five into the smoother
+      smoother.updateAll(rels);
 
-      // 3) update all bars & labels with the *smoothed* values
-      document.getElementById("deltaBar").style.width = `${Math.round(deltaSm * 100)}%`;
-      document.getElementById("thetaBar").style.width = `${Math.round(thetaSm * 100)}%`;
-      document.getElementById("alphaBar").style.width = `${Math.round(alphaSm * 100)}%`;
-      document.getElementById("betaBar").style.width = `${Math.round(betaSm * 100)}%`;
-      document.getElementById("gammaBar").style.width = `${Math.round(gammaSm * 100)}%`;
+      // 3) retrieve the smoothed values
+      const smooth = {
+        delta: smoother.getSmoothed('delta'),
+        theta: smoother.getSmoothed('theta'),
+        alpha: smoother.getSmoothed('alpha'),
+        beta: smoother.getSmoothed('beta'),
+        gamma: smoother.getSmoothed('gamma')
+      };
 
-      document.getElementById("deltaValue").textContent = `${Math.round(deltaSm * 100)}%`;
-      document.getElementById("thetaValue").textContent = `${Math.round(thetaSm * 100)}%`;
-      document.getElementById("alphaValue").textContent = `${Math.round(alphaSm * 100)}%`;
-      document.getElementById("betaValue").textContent = `${Math.round(betaSm * 100)}%`;
-      document.getElementById("gammaValue").textContent = `${Math.round(gammaSm * 100)}%`;
+      // 4) update each bar’s width and its label text
+      ['delta', 'theta', 'alpha', 'beta', 'gamma'].forEach(band => {
+        const pct = Math.round(smooth[band] * 100);
+        document.getElementById(`${band}Bar`).style.width = `${pct}%`;
+        document.getElementById(`${band}Value`).textContent = `${pct}%`;
+      });
 
-      // 4) bubble logic still on beta instant+smoothed if you want
-      if (betaRel >= betaThreshold * 1.1 && betaSm >= betaThreshold) {
+      // 5) (optional) bubble logic based on both instant and smoothed beta
+      if (rels.beta >= betaThreshold * 1.1 && smooth.beta >= betaThreshold) {
         createFocusBubbles();
       }
     }
+
 
 
     function processFFT() {
