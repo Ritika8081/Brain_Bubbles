@@ -1,4 +1,4 @@
-# EEG Focus Balloon
+# EEG Brain Balloon
 
 ![Game Screenshot](./game_image.png)
 
