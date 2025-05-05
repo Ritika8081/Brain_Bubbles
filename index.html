@@ -423,7 +423,7 @@
     const THETA_RANGE = [4, 8];
     const ALPHA_RANGE = [8, 12];
     const BETA_RANGE = [12, 30];
-    const GAMMA_RANGE = [30, 100];
+    const GAMMA_RANGE = [30, 45];
 
     // Variables for BLE connection
     let device = null, server = null, controlChar = null, dataChar = null;
@@ -435,10 +435,7 @@
     let filterStateCh0 = { z1: 0, z2: 0, x1: 0 };
     let betaThreshold = 0.40;  // initial threshold
 
-    // Buffer for smoothing beta values
-    let buffer_size = 128;
-    let circular_buffer = new Array(buffer_size).fill(0);
-    let data_index = 0, sum = 0;
+
 
     // Bubble cooldown system
     let lastBubbleTime = 0;
@@ -580,7 +577,7 @@
 
     // Utility functions from the original code
     function normalizeSample(sample) {
-      const a = 3249;
+      const a = 4096;
       return (sample - a / 2) * (2 / a);
     }
 
@@ -602,46 +599,74 @@
       }
       return power;
     }
+    function createSmoother(bufferSize) {
+      const buffers = {
+        alpha: new Array(bufferSize).fill(0),
+        beta: new Array(bufferSize).fill(0),
+        gamma: new Array(bufferSize).fill(0),
+        theta: new Array(bufferSize).fill(0),
+        delta: new Array(bufferSize).fill(0)
+      };
+      const sums = { alpha: 0, beta: 0, gamma: 0, theta: 0, delta: 0 };
+      let index = 0;
 
-    function getSmoothedBeta(beta) {
-      sum -= circular_buffer[data_index];
-      sum += beta;
-      circular_buffer[data_index] = beta;
-      data_index = (data_index + 1) % buffer_size;
-      return sum / buffer_size;
+      return function getSmoothedValue(band, newValue) {
+        sums[band] -= buffers[band][index];
+        sums[band] += newValue;
+        buffers[band][index] = newValue;
+
+        if (band === 'delta') {
+          index = (index + 1) % bufferSize; // Only advance once per full round
+        }
+
+        return sums[band] / bufferSize;
+      };
     }
+
+
+    const bufferSize = 128;
+    const getSmoothedValue = createSmoother(bufferSize);
+
+
 
     // Modified updateBarGraph function
     function updateBarGraph(deltaP, thetaP, alphaP, betaP, gammaP) {
       const total = deltaP + thetaP + alphaP + betaP + gammaP;
       if (total <= 0) return;
 
+      // 1) compute relative (instant) for each
       const deltaRel = deltaP / total;
       const thetaRel = thetaP / total;
       const alphaRel = alphaP / total;
-      const betaRelInstant = betaP / total;  // Instantaneous beta value
-      const betaRel = getSmoothedBeta(betaRelInstant);  // Smoothed beta value
+      const betaRel = betaP / total;
       const gammaRel = gammaP / total;
 
-      // Update horizontal bar chart
-      document.getElementById("deltaBar").style.width = `${Math.round(deltaRel * 100)}%`;
-      document.getElementById("thetaBar").style.width = `${Math.round(thetaRel * 100)}%`;
-      document.getElementById("alphaBar").style.width = `${Math.round(alphaRel * 100)}%`;
-      document.getElementById("betaBar").style.width = `${Math.round(betaRel * 100)}%`;
-      document.getElementById("gammaBar").style.width = `${Math.round(gammaRel * 100)}%`;
+      // 2) get smoothed values
+      const deltaSm = getSmoothedValue('delta', deltaRel);
+      const thetaSm = getSmoothedValue('theta', thetaRel);
+      const alphaSm = getSmoothedValue('alpha', alphaRel);
+      const betaSm = getSmoothedValue('beta', betaRel);
+      const gammaSm = getSmoothedValue('gamma', gammaRel);
 
-      document.getElementById("deltaValue").textContent = `${Math.round(deltaRel * 100)}%`;
-      document.getElementById("thetaValue").textContent = `${Math.round(thetaRel * 100)}%`;
-      document.getElementById("alphaValue").textContent = `${Math.round(alphaRel * 100)}%`;
-      document.getElementById("betaValue").textContent = `${Math.round(betaRel * 100)}%`;
-      document.getElementById("gammaValue").textContent = `${Math.round(gammaRel * 100)}%`;
+      // 3) update all bars & labels with the *smoothed* values
+      document.getElementById("deltaBar").style.width = `${Math.round(deltaSm * 100)}%`;
+      document.getElementById("thetaBar").style.width = `${Math.round(thetaSm * 100)}%`;
+      document.getElementById("alphaBar").style.width = `${Math.round(alphaSm * 100)}%`;
+      document.getElementById("betaBar").style.width = `${Math.round(betaSm * 100)}%`;
+      document.getElementById("gammaBar").style.width = `${Math.round(gammaSm * 100)}%`;
 
-      // Create bubbles when either instant or smoothed beta exceeds threshold
-      // Using 1.1x threshold for instant check to prevent false positives
-      if (betaRelInstant >= betaThreshold * 1.1 && betaRel >= betaThreshold) {
+      document.getElementById("deltaValue").textContent = `${Math.round(deltaSm * 100)}%`;
+      document.getElementById("thetaValue").textContent = `${Math.round(thetaSm * 100)}%`;
+      document.getElementById("alphaValue").textContent = `${Math.round(alphaSm * 100)}%`;
+      document.getElementById("betaValue").textContent = `${Math.round(betaSm * 100)}%`;
+      document.getElementById("gammaValue").textContent = `${Math.round(gammaSm * 100)}%`;
+
+      // 4) bubble logic still on beta instant+smoothed if you want
+      if (betaRel >= betaThreshold * 1.1 && betaSm >= betaThreshold) {
         createFocusBubbles();
       }
     }
+
 
     function processFFT() {
       if (fftBuffer.length < FFT_SIZE) return;
@@ -673,13 +698,13 @@
       const rawEEG = dataView.getInt16(1, false);
 
       // Process EEG
-      const normEEG = normalizeSample(Math.max(0, Math.min(3249, rawEEG)));
+      const normEEG = normalizeSample(Math.max(0, Math.min(4095, rawEEG)));
       const filteredEEG = applyFilter(normEEG, filterStateCh0);
       updateData(filteredEEG);
       samplesReceived++;
     }
 
-    function handleNotification(event) {
+    function handleIncomingSamples(event) {
       const value = event.target.value;
       if (value.byteLength === NEW_PACKET_LEN) {
         for (let i = 0; i < NEW_PACKET_LEN; i += SINGLE_SAMPLE_LEN) {
@@ -746,7 +771,7 @@
         if (!dataChar || !controlChar) return;
         await controlChar.writeValue(new TextEncoder().encode("START"));
         await dataChar.startNotifications();
-        dataChar.addEventListener("characteristicvaluechanged", handleNotification);
+        dataChar.addEventListener("characteristicvaluechanged", handleIncomingSamples);
         streaming = true;
         updateButtonStates();
         console.log("Streaming started.");
@@ -760,7 +785,7 @@
       try {
         if (dataChar && streaming) {
           await dataChar.stopNotifications();
-          dataChar.removeEventListener("characteristicvaluechanged", handleNotification);
+          dataChar.removeEventListener("characteristicvaluechanged", handleIncomingSamples);
           streaming = false;
           updateButtonStates();
           console.log("Streaming stopped.");
