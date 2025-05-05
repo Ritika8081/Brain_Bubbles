@@ -1,6 +1,8 @@
 # EEG Focus Balloon
 
-EEG Focus Balloon is an interactive web-based visualization game that uses EEG data to create dynamic bubble animations. The project leverages the Web Bluetooth API to connect to a Bluetooth-enabled EEG device and processes the brainwave signals (Delta, Theta, Alpha, Beta, Gamma) to trigger animations and display real-time data.
+![Game Screenshot](./game_image.png)
+
+EEG Brain Balloon is an interactive web-based visualization game that uses EEG data to create dynamic bubble animations. The project leverages the Web Bluetooth API to connect to a Bluetooth-enabled EEG device and processes the brainwave signals (Delta, Theta, Alpha, Beta, Gamma) to trigger animations and display real-time data.
 
 ## Features
 
@@ -8,11 +10,11 @@ EEG Focus Balloon is an interactive web-based visualization game that uses EEG d
 - **Dynamic Visualization:** Animates a balloon and generates bubbles when beta power exceeds a user-defined threshold.
 - **User Controls:** Provides a control panel with buttons to connect/disconnect the device, start/stop data streaming, and adjust the beta threshold.
 - **Real-Time Updates:** Displays EEG band power values with a bar graph and updates the visual effects accordingly.
-- **Web Bluetooth API:** Seamlessly connects to compatible EEG devices (e.g., those with a name starting with "NPG").
+- **Web Bluetooth API:** Seamlessly connects to compatible EEG devices (e.g., "NPG Lite").
 
 ## Project Structure
 
-- **game.html:** The main HTML file that includes all the HTML, CSS, and JavaScript needed to run the application.
+- **index.html:** The main HTML file that includes all the HTML, CSS, and JavaScript needed to run the application.
 - **README.md:** This documentation file.
 
 ## Setup and Installation
@@ -22,7 +24,7 @@ EEG Focus Balloon is an interactive web-based visualization game that uses EEG d
    - A compatible Bluetooth-enabled EEG device.
 
 2. **Usage:**
-   - Open the `game.html` file in your web browser.
+   - Open the `index.html` file in your web browser.
    - Click the **Connect Device** button to search for and connect to your EEG device.
    - Once connected, click **Start Stream** to begin receiving and processing EEG data.
    - Adjust the **Beta Threshold** slider to set the sensitivity for triggering the bubble animations.
@@ -47,8 +49,6 @@ EEG Focus Balloon is an interactive web-based visualization game that uses EEG d
 
 ## License
 
-This project is open source. Feel free to modify and use it as needed.
+This project is open source. You're welcome to modify and use it as needed—just kindly remember to give appropriate credit.
 
----
-
-For further questions or contributions, please reach out or submit an issue.
+If you have any questions or would like to contribute, feel free to reach out or open an issue.
