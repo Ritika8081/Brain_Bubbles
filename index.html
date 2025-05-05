@@ -495,7 +495,7 @@
         for (let i = 0; i < n - 1; i++) {
           if (i < j) {
             [real[i], real[j]] = [real[j], real[i]];
-            [imag[i], imag[j]] = [imag[j], real[i]];
+            [imag[i], imag[j]] = [imag[j], imag[i]];
           }
           let k = n / 2;
           while (k <= j) { j -= k; k /= 2; }
