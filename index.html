@@ -715,6 +715,14 @@
         processSample(new DataView(value.buffer));
       }
     }
+    function clearBarGraph() {
+      // for each band, reset width and label
+      ['delta', 'theta', 'alpha', 'beta', 'gamma'].forEach(band => {
+        document.getElementById(`${band}Bar`).style.width = '0%';
+        document.getElementById(`${band}Value`).textContent = '';  // blank instead of “0%”
+      });
+    }
+
 
     function updateButtonStates() {
       connectBtn.disabled = connected || streaming;
@@ -760,6 +768,7 @@
         connected = false;
         streaming = false;
         updateButtonStates();
+        clearBarGraph();
         console.log("Device disconnected.");
       } catch (err) {
         console.log("Error disconnecting:", err);
